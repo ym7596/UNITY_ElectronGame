@@ -8,7 +8,10 @@ namespace Internal.Scripts.Core.ElecSystem
     {
         [SerializeField] private LineRenderer lineRenderer;
         [SerializeField] private int pointsPerSegment = 10;
+        [SerializeField] private Material unpoweredMaterial;
+        [SerializeField] private Material poweredMaterial;
 
+        public List<Vector2Int> gridPositions = new List<Vector2Int>();
         private List<Vector3> points = new List<Vector3>();
 
         private void Awake()
@@ -27,6 +30,12 @@ namespace Internal.Scripts.Core.ElecSystem
         {
             points = newPoints;
             UpdateLine();
+        }
+
+        public void SetPowered(bool isPowered)
+        {
+            if (lineRenderer == null) return;
+            lineRenderer.sharedMaterial = isPowered ? poweredMaterial : unpoweredMaterial;
         }
 
         private void UpdateLine()

@@ -24,9 +24,20 @@ namespace Internal.Scripts.Core.ElecSystem
         public float CellSize = 2f; // 건물 사이즈에 맞춰 2.0으로 유지
         [Header("Visualization")]
         public bool ShowCoordinates = true;
+        public Vector2Int PowerSourcePos = Vector2Int.zero; // 중심(배터리) 위치
         // 그리드 데이터를 관리하는 딕셔너리
 
         private Dictionary<Vector2Int, TileType> _gridData = new Dictionary<Vector2Int, TileType>();
+
+        private void Start()
+        {
+            // 중앙 배터리 영역 초기화 (탐색의 출발점이 될 수 있도록)
+            SetTileType(new Vector2Int(0, 0), TileType.Building);
+            SetTileType(new Vector2Int(-1, 0), TileType.Building);
+            SetTileType(new Vector2Int(-1, -1), TileType.Building);
+            SetTileType(new Vector2Int(0, -1), TileType.Building);
+        }
+
         public Vector2Int WorldToGrid(Vector3 worldPosition)
         {
             // 중앙 정렬 기반: x/z 좌표를 셀 크기로 나누어 그리드 인덱스 산출
@@ -70,6 +81,64 @@ namespace Internal.Scripts.Core.ElecSystem
         public bool IsOccupied(Vector2Int gridPosition)
         {
             return GetTileType(gridPosition) != TileType.Empty;
+        }
+
+        /// <summary>
+        /// 특정 위치가 배터리(전원)와 연결되어 있는지 BFS로 확인합니다.
+        /// </summary>
+        public bool IsConnectedToPower(Vector2Int targetPos)
+        {
+            Vector2Int[] powerSources = new Vector2Int[] 
+            {
+                new Vector2Int(0, 0),
+                new Vector2Int(-1, 0),
+                new Vector2Int(-1, -1),
+                new Vector2Int(0, -1)
+            };
+
+            foreach (var source in powerSources)
+                if (targetPos == source) return true;
+
+            Queue<Vector2Int> queue = new Queue<Vector2Int>();
+            HashSet<Vector2Int> visited = new HashSet<Vector2Int>();
+
+            foreach (var source in powerSources)
+            {
+                queue.Enqueue(source);
+                visited.Add(source);
+            }
+
+            while (queue.Count > 0)
+            {
+                Vector2Int current = queue.Dequeue();
+
+                if (current == targetPos) return true;
+
+                // 상하좌우 대각선 인접 타일 검사
+                for (int x = -1; x <= 1; x++)
+                {
+                    for (int y = -1; y <= 1; y++)
+                    {
+                        if (x == 0 && y == 0) continue;
+                        Vector2Int neighbor = current + new Vector2Int(x, y);
+
+                        if (visited.Contains(neighbor)) continue;
+                        
+                        // 이웃이 전선이거나 건물인 경우에만 전기 흐름
+                        TileType type = GetTileType(neighbor);
+                        if (type == TileType.Wire || type == TileType.Building)
+                        {
+                            visited.Add(neighbor);
+                            queue.Enqueue(neighbor);
+                        }
+                    }
+                }
+                
+                if (visited.Count > 1000) break; // 안전장치
+            }
+            
+            // Debug.Log($"[PowerCheck] {targetPos} fail. Path checked: {visited.Count}");
+            return false;
         }
         
 #if UNITY_EDITOR
