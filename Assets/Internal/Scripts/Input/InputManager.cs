@@ -29,6 +29,14 @@ namespace Internal.Scripts.Input
             _dduRInput.dduRActionMap.RightClick.performed += _ => OnRightClickPerformed?.Invoke();
         }
 
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (!hasFocus)
+            {
+                OnLeftClickCanceled?.Invoke();
+            }
+        }
+
         private void OnDestroy()
         {
             if (_dduRInput != null)

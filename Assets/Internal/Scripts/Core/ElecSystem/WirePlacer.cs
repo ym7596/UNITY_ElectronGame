@@ -17,6 +17,7 @@ namespace Internal.Scripts.Core.ElecSystem
         private List<(List<Vector2Int> path, Wire wire)> _allWires = new List<(List<Vector2Int>, Wire)>();
         private Wire _previewWire;
         private bool _isDragging = false;
+        public bool IsDragging => _isDragging;
 
         private void Start()
         {
@@ -46,6 +47,9 @@ namespace Internal.Scripts.Core.ElecSystem
         public void StartPlacing(Vector2Int startPos)
         {
             if (!gridManager.IsWithinGrid(startPos)) return;
+
+            // 이미 진행 중인 프리뷰가 있다면 정리 (비정상 종료 대응)
+            if (_previewWire != null) Destroy(_previewWire.gameObject);
 
             _isDragging = true;
             _currentPath.Clear();

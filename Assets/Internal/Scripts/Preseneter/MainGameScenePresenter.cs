@@ -45,27 +45,38 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
     {
         if (_isDragging)
         {
-            Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
+            Vector2 mousePos = _inputService.MousePosition;
+            // 화면 밖으로 커서가 나갔을 때는 그리드 업데이트를 중단하여 잘못된 경로가 기록되는 것을 방지
+            if (mousePos.x < 0 || mousePos.y < 0 || mousePos.x > Screen.width || mousePos.y > Screen.height)
+            {
+                return;
+            }
+
+            Ray ray = _cam.ScreenPointToRay(mousePos);
             if (Physics.Raycast(ray, out RaycastHit hit))
             {
                 Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
-                _wirePlacer.UpdatePlacing(gridPos);
+                
+                // 아직 WirePlacer가 시작되지 않았다면 (첫 업데이트 프레임) 시작 처리
+                if (!_wirePlacer.IsDragging)
+                {
+                    _wirePlacer.StartPlacing(gridPos);
+                    _startClickPosition = hit.point;
+                    Debug.Log($"[ClickStarted-Tick] WorldPos: {_startClickPosition}, GridPos: {gridPos}");
+                }
+                else
+                {
+                    _wirePlacer.UpdatePlacing(gridPos);
+                }
             }
         }
     }
 
     private void OnHandleLeftClickStarted()
     {
-        Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
-        if (Physics.Raycast(ray, out RaycastHit hit))
-        {
-            _startClickPosition = hit.point;
-            Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
-            _isDragging = true;
-            _wirePlacer.StartPlacing(gridPos);
-            
-            Debug.Log($"[ClickStarted] WorldPos: {_startClickPosition}, GridPos: {gridPos}");
-        }
+        // 클릭 이벤트 시점의 좌표가 부정확할 수 있으므로 (Focus Gain 등), 
+        // 실제 설치 시작 로직은 Tick의 첫 프레임으로 위임함.
+        _isDragging = true;
     }
 
     private void OnHandleLeftClickCanceled()
@@ -78,7 +89,13 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 
     private void OnHandleRightClick()
     {
-        Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
+        Vector2 mousePos = _inputService.MousePosition;
+        if (mousePos.x < 0 || mousePos.y < 0 || mousePos.x > Screen.width || mousePos.y > Screen.height)
+        {
+            return;
+        }
+
+        Ray ray = _cam.ScreenPointToRay(mousePos);
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
