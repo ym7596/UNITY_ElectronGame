@@ -4,46 +4,86 @@ using VContainer.Unity;
 using Internal.Scripts.Input;
 using Internal.Scripts.Core.ElecSystem;
 
-public class MainGameScenePresenter : IInitializable, IDisposable
+public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 {
     private readonly IInputService _inputService;
     private readonly IGridService _gridService;
+    private readonly WirePlacer _wirePlacer;
     private readonly Camera _cam;
 
-    public MainGameScenePresenter(IInputService inputService, IGridService gridService)
+    private Vector3 _startClickPosition;
+    private bool _isDragging;
+
+    public MainGameScenePresenter(
+        IInputService inputService, 
+        IGridService gridService,
+        WirePlacer wirePlacer)
     {
         _inputService = inputService;
         _gridService = gridService;
+        _wirePlacer = wirePlacer;
         _cam = Camera.main;
     }
 
     public void Initialize()
     {
-        _inputService.OnLeftClickPerformed += OnHandleLeftClick;
+        _inputService.OnLeftClickStarted += OnHandleLeftClickStarted;
+        _inputService.OnLeftClickCanceled += OnHandleLeftClickCanceled;
+        
+        _inputService.OnRightClickPerformed += OnHandleRightClick;
     }
 
     public void Dispose()
     {
-        _inputService.OnLeftClickPerformed -= OnHandleLeftClick;
+        _inputService.OnLeftClickStarted -= OnHandleLeftClickStarted;
+        _inputService.OnLeftClickCanceled -= OnHandleLeftClickCanceled;
+        
+        _inputService.OnRightClickPerformed -= OnHandleRightClick;
     }
 
-    private void OnHandleLeftClick()
+    public void Tick()
+    {
+        if (_isDragging)
+        {
+            Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
+            if (Physics.Raycast(ray, out RaycastHit hit))
+            {
+                Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
+                _wirePlacer.UpdatePlacing(gridPos);
+            }
+        }
+    }
+
+    private void OnHandleLeftClickStarted()
     {
         Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
-        
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
-            // 2. 월드 좌표를 그리드 좌표로 변환 (인덱스)
+            _startClickPosition = hit.point;
             Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
+            _isDragging = true;
+            _wirePlacer.StartPlacing(gridPos);
             
-            if (_gridService.IsWithinGrid(gridPos))
-            {
-                // 3. 그리드 인덱스를 다시 타일의 정중앙 월드 좌표로 변환
-                Vector3 snappedWorldPos = _gridService.GridToWorld(gridPos);
-                
-                // 4. 로그에 인덱스와 정교화된(Snapped) 월드 좌표를 모두 출력
-                Debug.Log($"[GridClick] Index: {gridPos}, WorldPos: {snappedWorldPos}");
-            }
+            Debug.Log($"[ClickStarted] WorldPos: {_startClickPosition}, GridPos: {gridPos}");
+        }
+    }
+
+    private void OnHandleLeftClickCanceled()
+    {
+        _isDragging = false;
+        _startClickPosition = Vector3.zero;
+        _wirePlacer.StopPlacing();
+        Debug.Log("[ClickCanceled] Position Reset and Placing Stopped");
+    }
+
+    private void OnHandleRightClick()
+    {
+        Ray ray = _cam.ScreenPointToRay(_inputService.MousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
+            _wirePlacer.RemoveWireAt(gridPos);
+            Debug.Log($"[RightClick] Removed wire at {gridPos}");
         }
     }
 }

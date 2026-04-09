@@ -8,7 +8,6 @@ namespace Internal.Scripts.Core.ElecSystem
     {
         [Header("References")]
         [SerializeField] private GridManager gridManager;
-        [SerializeField] private InputManager inputManager;
         [SerializeField] private GameObject wirePrefab; // LineRenderer와 Wire 컴포넌트가 있는 프리팹
 
         [Header("Settings")]
@@ -22,10 +21,6 @@ namespace Internal.Scripts.Core.ElecSystem
         private void Start()
         {
             if (gridManager == null) gridManager = FindFirstObjectByType<GridManager>();
-            if (inputManager == null) inputManager = FindFirstObjectByType<InputManager>();
-
-            inputManager.OnLeftClickStarted += StartDragging;
-            inputManager.OnLeftClickCanceled += StopDragging;
 
             // 씬에 이미 배치된 기존 전선들을 찾아 목록 복구
             RestoreExistingWires();
@@ -48,26 +43,8 @@ namespace Internal.Scripts.Core.ElecSystem
             Debug.Log($"[WirePlacer] Restored {_allWires.Count} existing wires from scene.");
         }
 
-        private void OnDestroy()
+        public void StartPlacing(Vector2Int startPos)
         {
-            if (inputManager != null)
-            {
-                inputManager.OnLeftClickStarted -= StartDragging;
-                inputManager.OnLeftClickCanceled -= StopDragging;
-            }
-        }
-
-        private void Update()
-        {
-            if (_isDragging)
-            {
-                UpdateDragging();
-            }
-        }
-
-        private void StartDragging()
-        {
-            Vector2Int startPos = GetMouseGridPosition();
             if (!gridManager.IsWithinGrid(startPos)) return;
 
             _isDragging = true;
@@ -83,9 +60,9 @@ namespace Internal.Scripts.Core.ElecSystem
             }
         }
 
-        private void UpdateDragging()
+        public void UpdatePlacing(Vector2Int currentGridPos)
         {
-            Vector2Int currentGridPos = GetMouseGridPosition();
+            if (!_isDragging) return;
             if (!gridManager.IsWithinGrid(currentGridPos)) return;
 
             Vector2Int lastPos = _currentPath[_currentPath.Count - 1];
@@ -116,7 +93,7 @@ namespace Internal.Scripts.Core.ElecSystem
             }
         }
 
-        private void StopDragging()
+        public void StopPlacing()
         {
             if (!_isDragging) return;
             _isDragging = false;
@@ -264,19 +241,6 @@ namespace Internal.Scripts.Core.ElecSystem
                 worldPoints.Add(wp);
             }
             _previewWire.SetPoints(worldPoints);
-        }
-
-        private Vector2Int GetMouseGridPosition()
-        {
-            Ray ray = Camera.main.ScreenPointToRay(inputManager.MousePosition);
-            Plane groundPlane = new Plane(Vector3.up, Vector3.zero);
-            
-            if (groundPlane.Raycast(ray, out float entry))
-            {
-                Vector3 worldPoint = ray.GetPoint(entry);
-                return gridManager.WorldToGrid(worldPoint);
-            }
-            return new Vector2Int(-999, -999);
         }
 
         private bool IsAdjacent(Vector2Int a, Vector2Int b)

@@ -164,7 +164,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c042075c451c76b45a79df75eb776044, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Internal.Scripts.Core.ElecSystem.Wire
-  lineRenderer: {fileID: 0}
+  lineRenderer: {fileID: 25553538659534590}
   pointsPerSegment: 10
   unpoweredMaterial: {fileID: 2100000, guid: 396303a6498674e9e9c25fd0edffe99b, type: 2}
   poweredMaterial: {fileID: 2100000, guid: 2d77b2b96c0e244288b0d44e23acad8a, type: 2}

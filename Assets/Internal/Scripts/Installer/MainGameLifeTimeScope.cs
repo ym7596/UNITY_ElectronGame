@@ -14,7 +14,10 @@ public class MainGameLifeTimeScope : LifetimeScope
         // 2. Grid Service (Component)
         builder.RegisterComponentInHierarchy<GridManager>().As<IGridService>();
 
-        // 3. Game Presenter (Entry Point)
+        // 3. Wire Placer (Component)
+        builder.RegisterComponentInHierarchy<WirePlacer>();
+
+        // 4. Game Presenter (Entry Point)
         builder.RegisterEntryPoint<MainGameScenePresenter>(Lifetime.Scoped);
     }
 }
