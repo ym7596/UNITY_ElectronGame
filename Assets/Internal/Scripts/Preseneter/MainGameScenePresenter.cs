@@ -9,6 +9,7 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
     private readonly IInputService _inputService;
     private readonly IGridService _gridService;
     private readonly WirePlacer _wirePlacer;
+    private readonly GridVisualizer _gridVisualizer;
     private readonly Camera _cam;
 
     private Vector3 _startClickPosition;
@@ -17,20 +18,26 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
     public MainGameScenePresenter(
         IInputService inputService, 
         IGridService gridService,
-        WirePlacer wirePlacer)
+        WirePlacer wirePlacer,
+        GridVisualizer gridVisualizer)
     {
         _inputService = inputService;
         _gridService = gridService;
         _wirePlacer = wirePlacer;
+        _gridVisualizer = gridVisualizer;
         _cam = Camera.main;
     }
 
     public void Initialize()
     {
+        _gridService.Initialize();
         _inputService.OnLeftClickStarted += OnHandleLeftClickStarted;
         _inputService.OnLeftClickCanceled += OnHandleLeftClickCanceled;
         
         _inputService.OnRightClickPerformed += OnHandleRightClick;
+        
+        _gridVisualizer.InitializeMap(_gridService);
+        _wirePlacer.InitializeMap(_gridService);
     }
 
     public void Dispose()

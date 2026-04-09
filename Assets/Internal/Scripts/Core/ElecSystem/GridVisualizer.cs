@@ -5,8 +5,7 @@ namespace Internal.Scripts.Core.ElecSystem
 {
     public class GridVisualizer : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private GridManager gridManager;
+        private IGridService gridService;
         
         [Header("Tile Prefabs")]
         [SerializeField] private GameObject groundPrefab;
@@ -14,28 +13,29 @@ namespace Internal.Scripts.Core.ElecSystem
         [SerializeField] private GameObject waterPrefab;
 
         private Dictionary<Vector2Int, GameObject> _spawnedTiles = new Dictionary<Vector2Int, GameObject>();
-
-        private void Start()
+        
+        public void InitializeMap(IGridService gridService)
         {
-            if (gridManager == null)
-                gridManager = GetComponent<GridManager>();
-                
+            if (this.gridService == null)
+                this.gridService = GetComponent<GridManager>();
+
+            this.gridService = gridService;
             InitializeMap();
         }
 
-        public void InitializeMap()
+        private void InitializeMap()
         {
             ClearMap();
-            
-            int halfW = gridManager.Width / 2;
-            int halfH = gridManager.Height / 2;
+            Debug.Log(gridService.GridSize);
+            int halfW =  gridService.GridSize.x / 2;
+            int halfH = gridService.GridSize.y / 2;
 
             for (int x = -halfW; x < halfW; x++)
             {
                 for (int y = -halfH; y < halfH; y++)
                 {
                     Vector2Int pos = new Vector2Int(x, y);
-                    TileType type = gridManager.GetTileType(pos);
+                    TileType type = gridService.GetTileType(pos);
                     
                     // 기본적으로 비어있으면 Ground로 취급하거나, 
                     // 데이터가 설정된 대로 배치
@@ -49,7 +49,7 @@ namespace Internal.Scripts.Core.ElecSystem
             GameObject prefab = GetPrefabForType(type);
             if (prefab == null) return;
 
-            Vector3 worldPos = gridManager.GridToWorld(gridPos);
+            Vector3 worldPos = gridService.GridToWorld(gridPos);
             GameObject tile = Instantiate(prefab, worldPos, Quaternion.identity, transform);
             tile.name = $"Tile_{gridPos.x}_{gridPos.y}_{type}";
             

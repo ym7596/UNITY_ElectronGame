@@ -6,8 +6,7 @@ namespace Internal.Scripts.Core.ElecSystem
 {
     public class WirePlacer : MonoBehaviour
     {
-        [Header("References")]
-        [SerializeField] private GridManager gridManager;
+        private IGridService _gridManager;
         [SerializeField] private GameObject wirePrefab; // LineRenderer와 Wire 컴포넌트가 있는 프리팹
 
         [Header("Settings")]
@@ -19,10 +18,13 @@ namespace Internal.Scripts.Core.ElecSystem
         private bool _isDragging = false;
         public bool IsDragging => _isDragging;
 
+        public void InitializeMap(IGridService gridService)
+        {
+            _gridManager = gridService;
+        }
+        
         private void Start()
         {
-            if (gridManager == null) gridManager = FindFirstObjectByType<GridManager>();
-
             // 씬에 이미 배치된 기존 전선들을 찾아 목록 복구
             RestoreExistingWires();
             
@@ -46,7 +48,7 @@ namespace Internal.Scripts.Core.ElecSystem
 
         public void StartPlacing(Vector2Int startPos)
         {
-            if (!gridManager.IsWithinGrid(startPos)) return;
+            if (!_gridManager.IsWithinGrid(startPos)) return;
 
             // 이미 진행 중인 프리뷰가 있다면 정리 (비정상 종료 대응)
             if (_previewWire != null) Destroy(_previewWire.gameObject);
@@ -67,7 +69,7 @@ namespace Internal.Scripts.Core.ElecSystem
         public void UpdatePlacing(Vector2Int currentGridPos)
         {
             if (!_isDragging) return;
-            if (!gridManager.IsWithinGrid(currentGridPos)) return;
+            if (!_gridManager.IsWithinGrid(currentGridPos)) return;
 
             Vector2Int lastPos = _currentPath[_currentPath.Count - 1];
 
@@ -107,7 +109,7 @@ namespace Internal.Scripts.Core.ElecSystem
                 // 실제 그리드 데이터에 전선 정보 기록
                 foreach (var pos in _currentPath)
                 {
-                    gridManager.SetTileType(pos, TileType.Wire);
+                    _gridManager.SetTileType(pos, TileType.Wire);
                 }
                 
                 _previewWire.name = "Wire_Final";
@@ -131,9 +133,9 @@ namespace Internal.Scripts.Core.ElecSystem
         /// </summary>
         public void RemoveWireAt(Vector2Int gridPos)
         {
-            if (gridManager.GetTileType(gridPos) != TileType.Wire) return;
+            if (_gridManager.GetTileType(gridPos) != TileType.Wire) return;
 
-            gridManager.SetTileType(gridPos, TileType.Empty);
+            _gridManager.SetTileType(gridPos, TileType.Empty);
 
             // 해당 좌표를 포함하는 모든 전선 오브젝트 찾기
             for (int i = _allWires.Count - 1; i >= 0; i--)
@@ -147,8 +149,8 @@ namespace Internal.Scripts.Core.ElecSystem
                     // 그리드 데이터에서도 해당 덩어리의 나머지 좌표들 삭제
                     foreach (var p in _allWires[i].path)
                     {
-                        if (gridManager.GetTileType(p) == TileType.Wire)
-                            gridManager.SetTileType(p, TileType.Empty);
+                        if (_gridManager.GetTileType(p) == TileType.Wire)
+                            _gridManager.SetTileType(p, TileType.Empty);
                     }
                     
                     _allWires.RemoveAt(i);
@@ -240,7 +242,7 @@ namespace Internal.Scripts.Core.ElecSystem
             List<Vector3> worldPoints = new List<Vector3>();
             foreach (var gridPos in _currentPath)
             {
-                Vector3 wp = gridManager.GridToWorld(gridPos);
+                Vector3 wp = _gridManager.GridToWorld(gridPos);
                 wp.y = yOffset;
                 worldPoints.Add(wp);
             }

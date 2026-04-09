@@ -2,6 +2,8 @@ using UnityEngine;
 
 public interface IGridService
 {
+    void Initialize();
+    Vector2Int GridSize { get; set; }
     Vector2Int WorldToGrid(Vector3 worldPosition);
     Vector3 GridToWorld(Vector2Int gridPosition);
     bool IsWithinGrid(Vector2Int gridPosition);

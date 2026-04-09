@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,9 +14,15 @@ namespace Internal.Scripts.Core.ElecSystem
         public bool ShowCoordinates = true;
         public Vector2Int PowerSourcePos = Vector2Int.zero; // 중심(배터리) 위치
         // 그리드 데이터를 관리하는 딕셔너리
+        
+        public void Initialize()
+        {
+            GridSize = new Vector2Int(Width, Height);
+        }
 
+        public Vector2Int GridSize { get; set; }
         private Dictionary<Vector2Int, TileType> _gridData = new Dictionary<Vector2Int, TileType>();
-
+        
         private void Start()
         {
             // 중앙 배터리 영역 초기화 (탐색의 출발점이 될 수 있도록)
@@ -24,7 +31,7 @@ namespace Internal.Scripts.Core.ElecSystem
             SetTileType(new Vector2Int(-1, -1), TileType.Building);
             SetTileType(new Vector2Int(0, -1), TileType.Building);
         }
-
+        
         public Vector2Int WorldToGrid(Vector3 worldPosition)
         {
             // 중앙 정렬 기반: x/z 좌표를 셀 크기로 나누어 그리드 인덱스 산출
@@ -33,6 +40,7 @@ namespace Internal.Scripts.Core.ElecSystem
                 Mathf.FloorToInt(worldPosition.z / CellSize)
             );
         }
+        
         public Vector3 GridToWorld(Vector2Int gridPosition)
         {
             // 중앙 정렬 기반: 인덱스에 셀 크기를 곱하고 절반 오프셋을 더해 중심점 산출
@@ -42,6 +50,7 @@ namespace Internal.Scripts.Core.ElecSystem
                 gridPosition.y * CellSize + CellSize / 2f
             );
         }
+        
         public bool IsWithinGrid(Vector2Int gridPosition)
         {
             int halfW = Width / 2;

@@ -16,6 +16,7 @@ public class MainGameLifeTimeScope : LifetimeScope
 
         // 3. Wire Placer (Component)
         builder.RegisterComponentInHierarchy<WirePlacer>();
+        builder.RegisterComponentInHierarchy<GridVisualizer>();
 
         // 4. Game Presenter (Entry Point)
         builder.RegisterEntryPoint<MainGameScenePresenter>(Lifetime.Scoped);
