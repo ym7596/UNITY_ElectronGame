@@ -69,7 +69,8 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
                 {
                     _wirePlacer.StartPlacing(gridPos);
                     _startClickPosition = hit.point;
-                    Debug.Log($"[ClickStarted-Tick] WorldPos: {_startClickPosition}, GridPos: {gridPos}");
+                    TileType type = _gridService.GetTileType(gridPos);
+                    Debug.Log($"[ClickStarted] WorldPos: {_startClickPosition}, GridPos: {gridPos}, TileType: {type}");
                 }
                 else
                 {
@@ -106,8 +107,10 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         if (Physics.Raycast(ray, out RaycastHit hit))
         {
             Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
+            TileType type = _gridService.GetTileType(gridPos);
+            Debug.Log($"[RightClick] GridPos: {gridPos}, TileType: {type}");
+            
             _wirePlacer.RemoveWireAt(gridPos);
-            Debug.Log($"[RightClick] Removed wire at {gridPos}");
         }
     }
 }

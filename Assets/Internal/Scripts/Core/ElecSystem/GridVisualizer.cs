@@ -20,7 +20,7 @@ namespace Internal.Scripts.Core.ElecSystem
                 this.gridService = GetComponent<GridManager>();
 
             this.gridService = gridService;
-            InitializeMap();
+          //  InitializeMap();
         }
 
         private void InitializeMap()

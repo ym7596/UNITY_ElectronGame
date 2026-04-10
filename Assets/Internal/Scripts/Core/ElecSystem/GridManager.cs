@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 namespace Internal.Scripts.Core.ElecSystem
 {
@@ -11,13 +12,17 @@ namespace Internal.Scripts.Core.ElecSystem
         public int Height = 30;
         public float CellSize = 2f; // 건물 사이즈에 맞춰 2.0으로 유지
         [Header("Visualization")]
-        public bool ShowCoordinates = true;
+        public Tilemap tileMap;
+        public Renderer GridRenderer;
+        public bool ShowInGameGrid = true;
+        public bool ShowGizmos = false;
         public Vector2Int PowerSourcePos = Vector2Int.zero; // 중심(배터리) 위치
         // 그리드 데이터를 관리하는 딕셔너리
         
         public void Initialize()
         {
             GridSize = new Vector2Int(Width, Height);
+            UpdateGridMaterial();
         }
 
         public Vector2Int GridSize { get; set; }
@@ -30,6 +35,30 @@ namespace Internal.Scripts.Core.ElecSystem
             SetTileType(new Vector2Int(-1, 0), TileType.Building);
             SetTileType(new Vector2Int(-1, -1), TileType.Building);
             SetTileType(new Vector2Int(0, -1), TileType.Building);
+            
+            UpdateGridMaterial();
+            SyncSceneTilemap(tileMap);
+        }
+
+        private void OnValidate()
+        {
+            UpdateGridMaterial();
+        }
+
+        public void UpdateGridMaterial()
+        {
+            if (GridRenderer == null) return;
+            
+            // 런타임이 아닐 때는 sharedMaterial 사용
+            Material mat = Application.isPlaying ? GridRenderer.material : GridRenderer.sharedMaterial;
+            if (mat == null || !mat.HasProperty("_CellSize")) return;
+
+            mat.SetFloat("_CellSize", CellSize);
+            mat.SetFloat("_GridHalfWidth", (Width / 2f) * CellSize);
+            mat.SetFloat("_GridHalfHeight", (Height / 2f) * CellSize);
+            
+            if (GridRenderer.gameObject.activeSelf != ShowInGameGrid)
+                GridRenderer.gameObject.SetActive(ShowInGameGrid);
         }
         
         public Vector2Int WorldToGrid(Vector3 worldPosition)
@@ -79,46 +108,59 @@ namespace Internal.Scripts.Core.ElecSystem
             return GetTileType(gridPosition) != TileType.Empty;
         }
         
-        
-#if UNITY_EDITOR
-        private void OnDrawGizmos()
+        [ContextMenu("Sync Data Now")]
+        public void SyncSceneTilemap(Tilemap sceneTilemap)
         {
-            Gizmos.color = new Color(1f, 0.92f, 0.016f, 0.4f);
-            float yOffset = 0.05f;
-            
+            if (sceneTilemap == null)
+            {
+                Debug.LogError("타일맵이 연결되지 않았습니다!");
+                return;
+            }
+
             int halfW = Width / 2;
             int halfH = Height / 2;
-            for (int x = -halfW; x <= halfW; x++)
+
+            int count = 0;
+            for (int x = -halfW; x < halfW; x++)
             {
-                Gizmos.DrawLine(
-                    new Vector3(x * CellSize, yOffset, -halfH * CellSize), 
-                    new Vector3(x * CellSize, yOffset, halfH * CellSize)
-                );
-            }
-            for (int z = -halfH; z <= halfH; z++)
-            {
-                Gizmos.DrawLine(
-                    new Vector3(-halfW * CellSize, yOffset, z * CellSize), 
-                    new Vector3(halfW * CellSize, yOffset, z * CellSize)
-                );
-            }
-            if (ShowCoordinates)
-            {
-                GUIStyle style = new GUIStyle();
-                style.normal.textColor = Color.gray;
-                style.fontSize = 7;
-                style.alignment = TextAnchor.MiddleCenter;
-                for (int x = -halfW; x < halfW; x++)
+                for (int y = -halfH; y < halfH; y++)
                 {
-                    for (int z = -halfH; z < halfH; z++)
+                    Vector2Int gridPos = new Vector2Int(x, y);
+                    
+                    // 핵심: 이미 빌딩이 설치된 칸은 타일맵 동기화에서 제외합니다.
+                    if (GetTileType(gridPos) == TileType.Building) continue;
+
+                    Vector3 worldPos = GridToWorld(gridPos);
+                    Vector3Int cellPos = sceneTilemap.WorldToCell(worldPos);
+                    TileBase tile = sceneTilemap.GetTile(cellPos);
+
+                    // 타일이 없으면 해당 칸을 Empty로 초기화 (이전에 채워졌던 데이터 청소)
+                    if (tile == null)
                     {
-                        Vector3 pos = GridToWorld(new Vector2Int(x, z));
-                        pos.y = yOffset;
-                        UnityEditor.Handles.Label(pos, $"({x},{z})", style);
+                        SetTileType(gridPos, TileType.Empty);
+                        continue;
+                    }
+
+                    if (tile.name.Contains("Water"))
+                    {
+                        SetTileType(gridPos, TileType.Water);
+                        count++;
+                    }
+                    else if (tile.name.Contains("Obstacle"))
+                    {
+                        SetTileType(gridPos, TileType.Obstacle);
+                        count++;
+                    }
+                    else
+                    {
+                        // 그 외(땅 등)는 모두 Empty로 취급
+                        SetTileType(gridPos, TileType.Empty);
                     }
                 }
             }
+
+            Debug.Log($"씬 타일 데이터 {count}개 동기화 완료! (Building 보호 로직 적용됨)");
         }
-#endif
+     
     }
 }
