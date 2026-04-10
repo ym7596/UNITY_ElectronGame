@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Internal.Scripts.Core.ElecSystem
+namespace Internal.Scripts.Core.GridSystem
 {
     [RequireComponent(typeof(LineRenderer))]
     public class Wire : MonoBehaviour

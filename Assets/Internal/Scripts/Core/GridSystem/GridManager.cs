@@ -1,9 +1,8 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-namespace Internal.Scripts.Core.ElecSystem
+namespace Internal.Scripts.Core.GridSystem
 {
     public class GridManager : MonoBehaviour, IGridService
     {

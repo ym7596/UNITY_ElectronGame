@@ -1,14 +1,16 @@
 using System;
 using UnityEngine;
 using VContainer.Unity;
-using Internal.Scripts.Input;
-using Internal.Scripts.Core.ElecSystem;
+using Internal.Scripts.Core.GridSystem;
+using Internal.Scripts.Core.TimeSystem;
 
 public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 {
     private readonly IInputService _inputService;
     private readonly IGridService _gridService;
+    private readonly ITimeService _timeService;
     private readonly WirePlacer _wirePlacer;
+
     private readonly GridVisualizer _gridVisualizer;
     private readonly Camera _cam;
 
@@ -18,12 +20,15 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
     public MainGameScenePresenter(
         IInputService inputService, 
         IGridService gridService,
+        ITimeService timeService,
         WirePlacer wirePlacer,
         GridVisualizer gridVisualizer)
     {
         _inputService = inputService;
         _gridService = gridService;
+        _timeService = timeService;
         _wirePlacer = wirePlacer;
+
         _gridVisualizer = gridVisualizer;
         _cam = Camera.main;
     }
@@ -38,7 +43,12 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         
         _gridVisualizer.InitializeMap(_gridService);
         _wirePlacer.InitializeMap(_gridService);
+
+        // 시간 이벤트 연결
+        _timeService.OnDayPassed += (day) => Debug.Log($"<color=yellow>Presenter: UI Update - Day {day}</color>");
+        _timeService.OnHouseSpawnRequested += () => Debug.Log("<color=cyan>Presenter: Signal - Time to Spawn a House!</color>");
     }
+
 
     public void Dispose()
     {

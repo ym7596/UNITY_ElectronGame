@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using Internal.Scripts.Core.GridSystem;
 
 namespace Internal.Scripts.Editor
 {
@@ -37,7 +38,7 @@ namespace Internal.Scripts.Editor
         {
             GameObject go = new GameObject(name);
             go.AddComponent<LineRenderer>();
-            var wire = go.AddComponent<Internal.Scripts.Core.ElecSystem.Wire>();
+            var wire = go.AddComponent<Wire>();
             
             // 머터리얼 2종 생성 (URP 호환을 위해 기본 Shader 사용)
             Shader defaultShader = Shader.Find("Universal Render Pipeline/Lit");
