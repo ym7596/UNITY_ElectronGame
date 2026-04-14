@@ -156,7 +156,7 @@ namespace Internal.Scripts.Core.GridSystem
 
                     Vector3 worldPos = GridToWorld(gridPos);
                     Vector3Int cellPos = sceneTilemap.WorldToCell(worldPos);
-                    TileBase tile = sceneTilemap.GetTile(cellPos);
+                    TileBase tile = sceneTilemap.GetTile(cellPos); //참조타입이라 전역변수로 굳이 둘 필요 없음
 
                     // 타일이 없으면 해당 칸을 Ground로 초기화 (이전에 채워졌던 데이터 청소)
                     if (tile == null)
