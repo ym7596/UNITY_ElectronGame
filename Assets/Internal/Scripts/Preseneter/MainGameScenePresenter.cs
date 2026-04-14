@@ -46,8 +46,8 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         _wirePlacer.InitializeMap(_gridService);
 
         // 시간 이벤트 연결
-        _timeService.OnDayPassed += (day) => Debug.Log($"<color=yellow>Presenter: UI Update - Day {day}</color>");
-        _timeService.OnHouseSpawnRequested += () => Debug.Log("<color=cyan>Presenter: Signal - Time to Spawn a House!</color>");
+        _timeService.OnDayPassed += OnDayPassed;
+        _timeService.OnHouseSpawnRequested += OnHouseSpawn;
     }
 
 
@@ -57,6 +57,9 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         _inputService.OnLeftClickCanceled -= OnHandleLeftClickCanceled;
         
         _inputService.OnRightClickPerformed -= OnHandleRightClick;
+        
+        _timeService.OnDayPassed -= OnDayPassed;
+        _timeService.OnHouseSpawnRequested -= OnHouseSpawn;
     }
 
     public void Tick()
@@ -90,6 +93,16 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
                 }
             }
         }
+    }
+
+    private void OnDayPassed(int day)
+    {
+        Debug.Log($"<color=yellow>Presenter: UI Update - Day {day}</color>");
+    }
+
+    private void OnHouseSpawn()
+    {
+        Debug.Log("<color=cyan>Presenter: Signal - Time to Spawn a House!</color>");
     }
 
     private void OnHandleLeftClickStarted()

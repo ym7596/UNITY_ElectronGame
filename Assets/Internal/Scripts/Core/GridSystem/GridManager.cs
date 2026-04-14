@@ -112,8 +112,11 @@ namespace Internal.Scripts.Core.GridSystem
         public TileType GetTileType(Vector2Int gridPosition)
         {
             if (_gridData.TryGetValue(gridPosition, out var type))
-                return type;
-            return TileType.Empty;
+            {
+                // Empty는 초기 상태일 뿐이므로 Ground로 취급
+                return type == TileType.Empty ? TileType.Ground : type;
+            }
+            return TileType.Ground;
         }
         
         public void SetTileType(Vector2Int gridPosition, TileType type)
@@ -155,10 +158,10 @@ namespace Internal.Scripts.Core.GridSystem
                     Vector3Int cellPos = sceneTilemap.WorldToCell(worldPos);
                     TileBase tile = sceneTilemap.GetTile(cellPos);
 
-                    // 타일이 없으면 해당 칸을 Empty로 초기화 (이전에 채워졌던 데이터 청소)
+                    // 타일이 없으면 해당 칸을 Ground로 초기화 (이전에 채워졌던 데이터 청소)
                     if (tile == null)
                     {
-                        SetTileType(gridPos, TileType.Empty);
+                        SetTileType(gridPos, TileType.Ground);
                         continue;
                     }
 
@@ -174,8 +177,8 @@ namespace Internal.Scripts.Core.GridSystem
                     }
                     else
                     {
-                        // 그 외(땅 등)는 모두 Empty로 취급
-                        SetTileType(gridPos, TileType.Empty);
+                        // 그 외(땅 등)는 모두 Ground로 취급
+                        SetTileType(gridPos, TileType.Ground);
                     }
                 }
             }
@@ -210,7 +213,7 @@ namespace Internal.Scripts.Core.GridSystem
             }
 
             _wireGraph.Remove(pos);
-            SetTileType(pos, TileType.Empty);
+            SetTileType(pos, TileType.Ground);
         }
 
         public void ClearWireConnections()

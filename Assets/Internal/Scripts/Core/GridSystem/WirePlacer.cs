@@ -5,6 +5,8 @@ namespace Internal.Scripts.Core.GridSystem
 {
     public class WirePlacer : MonoBehaviour
     {
+        public event System.Action<Vector2Int, TileType> OnInvalidTileHit;
+        
         private IGridService _gridManager;
         [SerializeField] private GameObject wirePrefab; // LineRenderer와 Wire 컴포넌트가 있는 프리팹
 
@@ -31,6 +33,15 @@ namespace Internal.Scripts.Core.GridSystem
         public void StartPlacing(Vector2Int startPos)
         {
             if (!_gridManager.IsWithinGrid(startPos)) return;
+
+            // [추가] Ground 혹은 이미 Wire인 경우에만 시작 가능
+            TileType type = _gridManager.GetTileType(startPos);
+            if (type != TileType.Ground && type != TileType.Wire)
+            {
+                Debug.Log($"[WirePlacer] Cannot start here. TileType is {type}");
+                OnInvalidTileHit?.Invoke(startPos, type);
+                return;
+            }
 
             // 이미 진행 중인 프리뷰가 있다면 정리 (비정상 종료 대응)
             if (_previewWire != null) Destroy(_previewWire.gameObject);
@@ -66,6 +77,14 @@ namespace Internal.Scripts.Core.GridSystem
                 // 새로운 칸으로 이동하는 경우 (인접한 경우만 추가)
                 else if (IsAdjacent(lastPos, currentGridPos))
                 {
+                    // [추가] 설치 가능한 타일(Ground/Wire)인지 확인
+                    TileType type = _gridManager.GetTileType(currentGridPos);
+                    if (type != TileType.Ground && type != TileType.Wire)
+                    {
+                        OnInvalidTileHit?.Invoke(currentGridPos, type);
+                        return;
+                    }
+
                     if (!_currentPath.Contains(currentGridPos))
                     {
                         _currentPath.Add(currentGridPos);
@@ -291,7 +310,11 @@ namespace Internal.Scripts.Core.GridSystem
                 
                 if (!_currentPath.Contains(current))
                 {
-                    _currentPath.Add(current);
+                    TileType type = _gridManager.GetTileType(current);
+                    if (type == TileType.Ground || type == TileType.Wire)
+                    {
+                        _currentPath.Add(current);
+                    }
                 }
                 
                 if (_currentPath.Count > 100) break; // 무한루프 방지
