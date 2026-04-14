@@ -11,8 +11,8 @@ namespace Internal.Scripts.Core.GridSystem
         [Header("Settings")]
         [SerializeField] private float yOffset = 0.2f;
 
+        private Dictionary<(Vector2Int, Vector2Int), Wire> _edgeVisuals = new Dictionary<(Vector2Int, Vector2Int), Wire>();
         private List<Vector2Int> _currentPath = new List<Vector2Int>();
-        private List<(List<Vector2Int> path, Wire wire)> _allWires = new List<(List<Vector2Int>, Wire)>();
         private Wire _previewWire;
         private bool _isDragging = false;
         public bool IsDragging => _isDragging;
@@ -24,25 +24,8 @@ namespace Internal.Scripts.Core.GridSystem
         
         private void Start()
         {
-            // 씬에 이미 배치된 기존 전선들을 찾아 목록 복구
-            RestoreExistingWires();
-            
             // 시작 시 모든 전선의 전력 상태 업데이트
             UpdateAllWiresPowerStatus();
-        }
-
-        private void RestoreExistingWires()
-        {
-            _allWires.Clear();
-            Wire[] existingWires = Object.FindObjectsByType<Wire>(FindObjectsSortMode.None);
-            foreach (var w in existingWires)
-            {
-                if (w.gridPositions != null && w.gridPositions.Count > 0)
-                {
-                    _allWires.Add((new List<Vector2Int>(w.gridPositions), w));
-                }
-            }
-            Debug.Log($"[WirePlacer] Restored {_allWires.Count} existing wires from scene.");
         }
 
         public void StartPlacing(Vector2Int startPos)
@@ -105,24 +88,20 @@ namespace Internal.Scripts.Core.GridSystem
 
             if (_currentPath.Count > 1)
             {
-                // 실제 그리드 데이터에 전선 정보 기록
-                foreach (var pos in _currentPath)
+                // 그래프에 모든 인접 연결 추가
+                for (int i = 0; i < _currentPath.Count - 1; i++)
                 {
-                    _gridManager.SetTileType(pos, TileType.Wire);
+                    _gridManager.AddWireConnection(_currentPath[i], _currentPath[i + 1]);
                 }
                 
-                _previewWire.name = "Wire_Final";
-                _previewWire.gridPositions = new List<Vector2Int>(_currentPath); // 위치 정보 저장
-                _allWires.Add((new List<Vector2Int>(_currentPath), _previewWire));
+                // 시각적 요소 동기화
+                SyncAllVisuals();
                 
                 // 설치 직후 전력 상태 업데이트
                 UpdateAllWiresPowerStatus();
             }
-            else
-            {
-                if (_previewWire != null) Destroy(_previewWire.gameObject);
-            }
 
+            if (_previewWire != null) Destroy(_previewWire.gameObject);
             _previewWire = null;
             _currentPath.Clear();
         }
@@ -134,30 +113,66 @@ namespace Internal.Scripts.Core.GridSystem
         {
             if (_gridManager.GetTileType(gridPos) != TileType.Wire) return;
 
-            _gridManager.SetTileType(gridPos, TileType.Empty);
+            // 1. 그래프에서 노드 제거 (연결된 모든 에지 자동 제거됨)
+            _gridManager.RemoveWireNode(gridPos);
 
-            // 해당 좌표를 포함하는 모든 전선 오브젝트 찾기
-            for (int i = _allWires.Count - 1; i >= 0; i--)
+            // 2. 시각적 요소 동기화
+            SyncAllVisuals();
+
+            // 3. 전력 상태 재계산
+            UpdateAllWiresPowerStatus();
+        }
+
+        private void SyncAllVisuals()
+        {
+            var graph = _gridManager.GetWireGraph();
+            HashSet<(Vector2Int, Vector2Int)> currentEdges = new HashSet<(Vector2Int, Vector2Int)>();
+
+            // 모든 에지 수집
+            foreach (var kvp in graph)
             {
-                if (_allWires[i].path.Contains(gridPos))
+                Vector2Int from = kvp.Key;
+                foreach (var to in kvp.Value)
                 {
-                    // 미니 모토웨이처럼 전체 전선을 지울지, 해당 좌표만 뺄지 결정 가능
-                    // 여기서는 일단 해당 전선 덩어리 전체를 삭제하는 방식으로 구현
-                    Destroy(_allWires[i].wire.gameObject);
-                    
-                    // 그리드 데이터에서도 해당 덩어리의 나머지 좌표들 삭제
-                    foreach (var p in _allWires[i].path)
-                    {
-                        if (_gridManager.GetTileType(p) == TileType.Wire)
-                            _gridManager.SetTileType(p, TileType.Empty);
-                    }
-                    
-                    _allWires.RemoveAt(i);
+                    var edge = GetEdgeKey(from, to);
+                    currentEdges.Add(edge);
                 }
             }
 
-            // 삭제 후 전력 상태 재계산
-            UpdateAllWiresPowerStatus();
+            // [삭제] 더 이상 존재하지 않는 에지 비주얼 제거
+            List<(Vector2Int, Vector2Int)> edgesToRemove = new List<(Vector2Int, Vector2Int)>();
+            foreach (var edge in _edgeVisuals.Keys)
+            {
+                if (!currentEdges.Contains(edge)) edgesToRemove.Add(edge);
+            }
+            foreach (var edge in edgesToRemove)
+            {
+                if (_edgeVisuals[edge] != null) Destroy(_edgeVisuals[edge].gameObject);
+                _edgeVisuals.Remove(edge);
+            }
+
+            // [추가] 새로운 에지 비주얼 생성
+            foreach (var edge in currentEdges)
+            {
+                if (!_edgeVisuals.ContainsKey(edge))
+                {
+                    GameObject go = Instantiate(wirePrefab, Vector3.zero, Quaternion.identity);
+                    Wire wire = go.GetComponent<Wire>();
+                    wire.name = $"Edge_{edge.Item1}_{edge.Item2}";
+                    
+                    List<Vector2Int> path = new List<Vector2Int> { edge.Item1, edge.Item2 };
+                    wire.gridPositions = path;
+                    UpdateWireVisual(wire);
+                    
+                    _edgeVisuals[edge] = wire;
+                }
+            }
+        }
+
+        private (Vector2Int, Vector2Int) GetEdgeKey(Vector2Int a, Vector2Int b)
+        {
+            if (a.x < b.x || (a.x == b.x && a.y < b.y)) return (a, b);
+            return (b, a);
         }
 
         /// <summary>
@@ -169,8 +184,9 @@ namespace Internal.Scripts.Core.GridSystem
         /// </summary>
         public void UpdateAllWiresPowerStatus()
         {
-            // 모든 전선의 상태 초기화
-            foreach (var item in _allWires) item.wire.SetPowered(false);
+            var graph = _gridManager.GetWireGraph();
+            // 모든 에지 상태 초기화
+            foreach (var wire in _edgeVisuals.Values) wire.SetPowered(false);
 
             HashSet<Vector2Int> batteryTiles = new HashSet<Vector2Int>
             {
@@ -178,49 +194,49 @@ namespace Internal.Scripts.Core.GridSystem
                 new Vector2Int(-1, -1), new Vector2Int(0, -1)
             };
 
-            HashSet<int> poweredWireIndices = new HashSet<int>();
-            Queue<int> checkQueue = new Queue<int>();
+            HashSet<Vector2Int> poweredNodes = new HashSet<Vector2Int>();
+            Queue<Vector2Int> queue = new Queue<Vector2Int>();
 
-            // 1. 배터리에 직접 닿은 전선들 먼저 찾기
-            for (int i = 0; i < _allWires.Count; i++)
+            // 1. 배터리에 닿아있는 노드들 시작점으로 설정
+            foreach (var batteryPos in batteryTiles)
             {
-                foreach (var pos in _allWires[i].path)
+                if (graph.ContainsKey(batteryPos))
                 {
-                    if (batteryTiles.Contains(pos))
+                    poweredNodes.Add(batteryPos);
+                    queue.Enqueue(batteryPos);
+                }
+            }
+
+            // 2. BFS 탐색
+            while (queue.Count > 0)
+            {
+                Vector2Int current = queue.Dequeue();
+                if (graph.TryGetValue(current, out var neighbors))
+                {
+                    foreach (var next in neighbors)
                     {
-                        poweredWireIndices.Add(i);
-                        checkQueue.Enqueue(i);
-                        break;
+                        if (!poweredNodes.Contains(next))
+                        {
+                            poweredNodes.Add(next);
+                            queue.Enqueue(next);
+                        }
                     }
                 }
             }
 
-            // 2. BFS로 연결된 전선들 추적 (공유하는 좌표가 있는지 확인)
-            while (checkQueue.Count > 0)
+            // 3. 비주얼 업데이트 (두 노드가 모두 전원이 들어온 에지만 유색으로?) 
+            // 아니면 한쪽만 들어와도? 보통은 '연결된 모든 선'이므로 한쪽만 들어와도 전선 자체가 연결된 것이면 색이 변해야 함.
+            // 여기서는 양 끝점 중 하나라도 전력 노드에 연결되어 있으면 powered 처리
+            foreach (var kvp in _edgeVisuals)
             {
-                int currentIdx = checkQueue.Dequeue();
-                var currentWirePath = _allWires[currentIdx].path;
-
-                for (int nextIdx = 0; nextIdx < _allWires.Count; nextIdx++)
+                var edge = kvp.Key;
+                if (poweredNodes.Contains(edge.Item1) || poweredNodes.Contains(edge.Item2))
                 {
-                    if (poweredWireIndices.Contains(nextIdx)) continue;
-
-                    // 두 전선이 겹치는 좌표(노드)가 있는지 확인
-                    if (HasSharedPosition(currentWirePath, _allWires[nextIdx].path))
-                    {
-                        poweredWireIndices.Add(nextIdx);
-                        checkQueue.Enqueue(nextIdx);
-                    }
+                    kvp.Value.SetPowered(true);
                 }
-            }
-
-            // 3. 결과 적용
-            foreach (int idx in poweredWireIndices)
-            {
-                _allWires[idx].wire.SetPowered(true);
             }
             
-            Debug.Log($"[PowerSystem] Updated. {poweredWireIndices.Count} wires connected via nodes.");
+            Debug.Log($"[PowerSystem] Updated. {poweredNodes.Count} nodes powered.");
         }
 
         private bool HasSharedPosition(List<Vector2Int> pathA, List<Vector2Int> pathB)
@@ -236,16 +252,24 @@ namespace Internal.Scripts.Core.GridSystem
 
         private void UpdatePreview()
         {
-            if (_previewWire == null) return;
+            UpdateWireVisual(_previewWire, _currentPath);
+        }
+
+        private void UpdateWireVisual(Wire wire, List<Vector2Int> path = null)
+        {
+            if (wire == null) return;
+            
+            List<Vector2Int> positions = path ?? wire.gridPositions;
+            if (positions == null || positions.Count == 0) return;
 
             List<Vector3> worldPoints = new List<Vector3>();
-            foreach (var gridPos in _currentPath)
+            foreach (var gridPos in positions)
             {
                 Vector3 wp = _gridManager.GridToWorld(gridPos);
                 wp.y = yOffset;
                 worldPoints.Add(wp);
             }
-            _previewWire.SetPoints(worldPoints);
+            wire.SetPoints(worldPoints);
         }
 
         private bool IsAdjacent(Vector2Int a, Vector2Int b)

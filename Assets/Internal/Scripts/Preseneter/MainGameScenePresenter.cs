@@ -16,6 +16,7 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 
     private Vector3 _startClickPosition;
     private bool _isDragging;
+    private bool _hasStartedPlacing; // 드래그 세션 당 한 번만 StartPlacing을 호출하기 위한 플래그
 
     public MainGameScenePresenter(
         IInputService inputService, 
@@ -75,9 +76,10 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
                 Vector2Int gridPos = _gridService.WorldToGrid(hit.point);
                 
                 // 아직 WirePlacer가 시작되지 않았다면 (첫 업데이트 프레임) 시작 처리
-                if (!_wirePlacer.IsDragging)
+                if (!_hasStartedPlacing)
                 {
                     _wirePlacer.StartPlacing(gridPos);
+                    _hasStartedPlacing = true;
                     _startClickPosition = hit.point;
                     TileType type = _gridService.GetTileType(gridPos);
                     Debug.Log($"[ClickStarted] WorldPos: {_startClickPosition}, GridPos: {gridPos}, TileType: {type}");
@@ -95,6 +97,7 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         // 클릭 이벤트 시점의 좌표가 부정확할 수 있으므로 (Focus Gain 등), 
         // 실제 설치 시작 로직은 Tick의 첫 프레임으로 위임함.
         _isDragging = true;
+        _hasStartedPlacing = false;
     }
 
     private void OnHandleLeftClickCanceled()

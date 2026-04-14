@@ -26,6 +26,7 @@ namespace Internal.Scripts.Core.GridSystem
 
         public Vector2Int GridSize { get; set; }
         private Dictionary<Vector2Int, TileType> _gridData = new Dictionary<Vector2Int, TileType>();
+        private Dictionary<Vector2Int, HashSet<Vector2Int>> _wireGraph = new Dictionary<Vector2Int, HashSet<Vector2Int>>();
         
         private void Start()
         {
@@ -37,6 +38,27 @@ namespace Internal.Scripts.Core.GridSystem
             
             UpdateGridMaterial();
             SyncSceneTilemap(tileMap);
+            
+            // 씬에 이미 배치된 기존 전선들을 찾아 목록 복구
+            // (그래프 방식에서는 이제 Wire 오브젝트들이 각자 자신의 gridPositions를 가지고 있으므로 이를 기반으로 그래프 빌드)
+            RestoreExistingWires();
+        }
+
+        private void RestoreExistingWires()
+        {
+            _wireGraph.Clear();
+            Wire[] existingWires = Object.FindObjectsByType<Wire>(FindObjectsSortMode.None);
+            foreach (var w in existingWires)
+            {
+                if (w.gridPositions != null && w.gridPositions.Count > 1)
+                {
+                    for (int i = 0; i < w.gridPositions.Count - 1; i++)
+                    {
+                        AddWireConnection(w.gridPositions[i], w.gridPositions[i + 1]);
+                    }
+                }
+            }
+            Debug.Log($"[GridManager] Restored wire graph with {_wireGraph.Count} nodes.");
         }
 
         private void OnValidate()
@@ -160,6 +182,40 @@ namespace Internal.Scripts.Core.GridSystem
 
             Debug.Log($"씬 타일 데이터 {count}개 동기화 완료! (Building 보호 로직 적용됨)");
         }
-     
+        
+        // --- 전선(Wire) 관리 기능 구현 (그래프 기반) ---
+        public Dictionary<Vector2Int, HashSet<Vector2Int>> GetWireGraph() => _wireGraph;
+
+        public void AddWireConnection(Vector2Int from, Vector2Int to)
+        {
+            if (!_wireGraph.ContainsKey(from)) _wireGraph[from] = new HashSet<Vector2Int>();
+            if (!_wireGraph.ContainsKey(to)) _wireGraph[to] = new HashSet<Vector2Int>();
+
+            _wireGraph[from].Add(to);
+            _wireGraph[to].Add(from);
+
+            SetTileType(from, TileType.Wire);
+            SetTileType(to, TileType.Wire);
+        }
+
+        public void RemoveWireNode(Vector2Int pos)
+        {
+            if (!_wireGraph.ContainsKey(pos)) return;
+
+            // 연결된 이웃들로부터 이 노드 제거
+            foreach (var neighbor in _wireGraph[pos])
+            {
+                if (_wireGraph.ContainsKey(neighbor))
+                    _wireGraph[neighbor].Remove(pos);
+            }
+
+            _wireGraph.Remove(pos);
+            SetTileType(pos, TileType.Empty);
+        }
+
+        public void ClearWireConnections()
+        {
+            _wireGraph.Clear();
+        }
     }
 }
