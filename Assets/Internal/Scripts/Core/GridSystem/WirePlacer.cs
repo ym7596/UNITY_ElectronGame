@@ -34,9 +34,9 @@ namespace Internal.Scripts.Core.GridSystem
         {
             if (!_gridManager.IsWithinGrid(startPos)) return;
 
-            // [추가] Ground 혹은 이미 Wire인 경우에만 시작 가능
+            // [추가] Ground, Wire 혹은 Building인 경우에만 시작 가능 (배터리 등에서 시작 가능하도록)
             TileType type = _gridManager.GetTileType(startPos);
-            if (type != TileType.Ground && type != TileType.Wire)
+            if (type != TileType.Ground && type != TileType.Wire && type != TileType.Building)
             {
                 Debug.Log($"[WirePlacer] Cannot start here. TileType is {type}");
                 OnInvalidTileHit?.Invoke(startPos, type);
@@ -77,9 +77,9 @@ namespace Internal.Scripts.Core.GridSystem
                 // 새로운 칸으로 이동하는 경우 (인접한 경우만 추가)
                 else if (IsAdjacent(lastPos, currentGridPos))
                 {
-                    // [추가] 설치 가능한 타일(Ground/Wire)인지 확인
+                    // [추가] 설치 가능한 타일(Ground/Wire/Building)인지 확인
                     TileType type = _gridManager.GetTileType(currentGridPos);
-                    if (type != TileType.Ground && type != TileType.Wire)
+                    if (type != TileType.Ground && type != TileType.Wire && type != TileType.Building)
                     {
                         OnInvalidTileHit?.Invoke(currentGridPos, type);
                         return;
@@ -311,7 +311,7 @@ namespace Internal.Scripts.Core.GridSystem
                 if (!_currentPath.Contains(current))
                 {
                     TileType type = _gridManager.GetTileType(current);
-                    if (type == TileType.Ground || type == TileType.Wire)
+                    if (type == TileType.Ground || type == TileType.Wire || type == TileType.Building)
                     {
                         _currentPath.Add(current);
                     }

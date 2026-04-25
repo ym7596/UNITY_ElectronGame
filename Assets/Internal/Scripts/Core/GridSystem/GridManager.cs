@@ -197,8 +197,9 @@ namespace Internal.Scripts.Core.GridSystem
             _wireGraph[from].Add(to);
             _wireGraph[to].Add(from);
 
-            SetTileType(from, TileType.Wire);
-            SetTileType(to, TileType.Wire);
+            // 건물이 있는 칸은 건물을 유지하고, 없는 칸만 전선 타일로 바꿈
+            if (GetTileType(from) != TileType.Building) SetTileType(from, TileType.Wire);
+            if (GetTileType(to) != TileType.Building) SetTileType(to, TileType.Wire);
         }
 
         public void RemoveWireNode(Vector2Int pos)
