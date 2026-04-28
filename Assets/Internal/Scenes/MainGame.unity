@@ -10836,7 +10836,7 @@ GameObject:
   - component: {fileID: 1236317227}
   - component: {fileID: 1236317226}
   - component: {fileID: 1236317225}
-  - component: {fileID: 1236317224}
+  - component: {fileID: 1236317228}
   m_Layer: 0
   m_Name: UICanvas
   m_TagString: Untagged
@@ -10864,18 +10864,6 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: 0}
---- !u!114 &1236317224
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1236317222}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f07bbd43673aaae488e5c7b8e0722b15, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UICanvas
 --- !u!114 &1236317225
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10939,6 +10927,20 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
+--- !u!114 &1236317228
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1236317222}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b0c7ff34325e44dc49223f1290995761, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Internal.Scripts.UI.MainGameCanvas
+  dayText: {fileID: 0}
+  timeScaleText: {fileID: 0}
 --- !u!1 &1379710625
 GameObject:
   m_ObjectHideFlags: 0
