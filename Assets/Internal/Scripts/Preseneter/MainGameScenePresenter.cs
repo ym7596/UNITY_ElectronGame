@@ -3,6 +3,7 @@ using UnityEngine;
 using VContainer.Unity;
 using Internal.Scripts.Core.GridSystem;
 using Internal.Scripts.Core.TimeSystem;
+using Internal.Scripts.Presenter;
 
 public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 {
@@ -10,6 +11,7 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
     private readonly IGridService _gridService;
     private readonly ITimeService _timeService;
     private readonly WirePlacer _wirePlacer;
+    private readonly GameUIPresenter _uiPresenter;
 
     private readonly GridVisualizer _gridVisualizer;
     private readonly Camera _cam;
@@ -23,12 +25,14 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         IGridService gridService,
         ITimeService timeService,
         WirePlacer wirePlacer,
-        GridVisualizer gridVisualizer)
+        GridVisualizer gridVisualizer,
+        GameUIPresenter uiPresenter)
     {
         _inputService = inputService;
         _gridService = gridService;
         _timeService = timeService;
         _wirePlacer = wirePlacer;
+        _uiPresenter = uiPresenter;
 
         _gridVisualizer = gridVisualizer;
         _cam = Camera.main;
@@ -41,6 +45,8 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         _inputService.OnLeftClickCanceled += OnHandleLeftClickCanceled;
         
         _inputService.OnRightClickPerformed += OnHandleRightClick;
+
+        _uiPresenter.OnPartChanged += OnPartChanged;
         
         _gridVisualizer.InitializeMap(_gridService);
         _wirePlacer.InitializeMap(_gridService);
@@ -57,9 +63,18 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         _inputService.OnLeftClickCanceled -= OnHandleLeftClickCanceled;
         
         _inputService.OnRightClickPerformed -= OnHandleRightClick;
+
+        _uiPresenter.OnPartChanged -= OnPartChanged;
         
         _timeService.OnDayPassed -= OnDayPassed;
         _timeService.OnHouseSpawnRequested -= OnHouseSpawn;
+    }
+
+    private void OnPartChanged(int index)
+    {
+        Debug.Log($"<color=green>MainPresenter: UI selected Part {index}. Updating Placement state...</color>");
+        // 여기서 index에 따라 WirePlacer의 모드를 변경하거나, 
+        // 다른 설치용 클래스(BuildingPlacer 등)에게 알림을 보낼 수 있습니다.
     }
 
     public void Tick()

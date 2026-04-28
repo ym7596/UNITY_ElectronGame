@@ -165,12 +165,12 @@ namespace Internal.Scripts.Core.GridSystem
                         continue;
                     }
 
-                    if (tile.name.Contains("Water"))
+                    if (tile.name.Contains(Config.TILE_NAME_WATER))
                     {
                         SetTileType(gridPos, TileType.Water);
                         count++;
                     }
-                    else if (tile.name.Contains("Obstacle"))
+                    else if (tile.name.Contains(Config.TILE_NAME_OBSTACLE))
                     {
                         SetTileType(gridPos, TileType.Obstacle);
                         count++;

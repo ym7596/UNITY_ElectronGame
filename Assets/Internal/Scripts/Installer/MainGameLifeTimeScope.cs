@@ -1,9 +1,10 @@
-using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 using Internal.Scripts.Input;
 using Internal.Scripts.Core.GridSystem;
 using Internal.Scripts.Core.TimeSystem;
+using Internal.Scripts.Presenter;
+using Internal.Scripts.UI;
 
 
 public class MainGameLifeTimeScope : LifetimeScope
@@ -23,7 +24,11 @@ public class MainGameLifeTimeScope : LifetimeScope
         // 4. Time Service
         builder.RegisterEntryPoint<TimeManager>().As<ITimeService>();
 
-        // 5. Game Presenter (Entry Point)
+        // 5. UI System
+        builder.RegisterComponentInHierarchy<MainGameCanvas>().As<IUICanvas>();
+        builder.RegisterEntryPoint<GameUIPresenter>(Lifetime.Scoped);
+
+        // 6. Game Presenter (Entry Point)
         builder.RegisterEntryPoint<MainGameScenePresenter>(Lifetime.Scoped);
 
     }
