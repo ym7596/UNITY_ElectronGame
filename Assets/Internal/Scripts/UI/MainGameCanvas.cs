@@ -6,10 +6,13 @@ namespace Internal.Scripts.UI
 {
     public class MainGameCanvas : MonoBehaviour, IUICanvas
     {
-        [SerializeField] private TextMeshProUGUI dayText;
-        [SerializeField] private TextMeshProUGUI timeScaleText;
+        [SerializeField] private TextMeshProUGUI _dayText;
+        [SerializeField] private TextMeshProUGUI _timeScaleText;
         
         private int _currentSelectedPartIndex = 0;
+
+        public int CurrentDay { get; private set; } = 1;
+        public float CurrentTimeScale { get; private set; } = 1.0f;
 
         public event Action<int> OnPartSelected;
         public event Action OnTimeSpeedToggleRequested;
@@ -26,12 +29,16 @@ namespace Internal.Scripts.UI
         {
             // TODO: UI Text/TextMeshPro 업데이트 로직
             // Debug.Log($"[UI View] Day updated to: {day}");
+            CurrentDay = day;
+            _dayText.text = day.ToString();
         }
 
         public void UpdateTimeScaleText(float scale)
         {
             // TODO: UI Text/TextMeshPro 업데이트 로직
             // Debug.Log($"[UI View] TimeScale updated to: {scale}x");
+            CurrentTimeScale = scale;
+            _timeScaleText.text = scale.ToString("F1");
         }
     }
 }
