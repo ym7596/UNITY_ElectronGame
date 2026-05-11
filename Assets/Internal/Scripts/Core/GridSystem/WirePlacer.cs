@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using VContainer;
 
 namespace Internal.Scripts.Core.GridSystem
 {
@@ -7,6 +8,7 @@ namespace Internal.Scripts.Core.GridSystem
     {
         public event System.Action<Vector2Int, TileType> OnInvalidTileHit;
         
+        [Inject]
         private IGridService _gridManager;
         [SerializeField] private GameObject wirePrefab; // LineRenderer와 Wire 컴포넌트가 있는 프리팹
 
@@ -26,6 +28,11 @@ namespace Internal.Scripts.Core.GridSystem
         
         private void Start()
         {
+            if (_gridManager == null)
+            {
+                Debug.LogWarning("[WirePlacer] _gridManager is null in Start. Power status will be updated later.");
+                return;
+            }
             // 시작 시 모든 전선의 전력 상태 업데이트
             UpdateAllWiresPowerStatus();
         }
@@ -203,7 +210,11 @@ namespace Internal.Scripts.Core.GridSystem
         /// </summary>
         public void UpdateAllWiresPowerStatus()
         {
+          
+            Debug.Log($"Graph Test2 {_gridManager}");
             var graph = _gridManager.GetWireGraph();
+            Debug.Log($"Graph Test {graph}");
+            Debug.Log($"Graph Test2 {_gridManager}");
             // 모든 에지 상태 초기화
             foreach (var wire in _edgeVisuals.Values) wire.SetPowered(false);
 

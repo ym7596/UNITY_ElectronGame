@@ -124,7 +124,7 @@ namespace Internal.Scripts.Core.GridSystem
             if (!IsWithinGrid(gridPosition)) return;
             
             _gridData[gridPosition] = type;
-            Debug.Log($"[GridData] ({gridPosition.x}, {gridPosition.y}) set to {type}");
+         //   Debug.Log($"[GridData] ({gridPosition.x}, {gridPosition.y}) set to {type}");
         }
         
         public bool IsOccupied(Vector2Int gridPosition)

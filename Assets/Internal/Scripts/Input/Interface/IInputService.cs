@@ -11,4 +11,5 @@ public interface IInputService
     
     Vector2 MousePosition { get; }
     Vector2 MouseDelta { get; }
+    bool IsPointerOverUI { get; }
 }

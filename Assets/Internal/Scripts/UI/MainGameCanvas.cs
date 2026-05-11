@@ -37,6 +37,7 @@ namespace Internal.Scripts.UI
         {
             // TODO: UI Text/TextMeshPro 업데이트 로직
             // Debug.Log($"[UI View] TimeScale updated to: {scale}x");
+      
             CurrentTimeScale = scale;
             _timeScaleText.text = scale.ToString("F1");
         }

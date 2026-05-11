@@ -11213,8 +11213,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b0c7ff34325e44dc49223f1290995761, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Internal.Scripts.UI.MainGameCanvas
-  dayText: {fileID: 1879628558}
-  timeScaleText: {fileID: 195690258}
+  _dayText: {fileID: 1879628558}
+  _timeScaleText: {fileID: 195690258}
 --- !u!1 &1379710625
 GameObject:
   m_ObjectHideFlags: 0

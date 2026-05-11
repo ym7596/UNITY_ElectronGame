@@ -10,7 +10,7 @@ namespace Internal.Scripts.Presenter
         private readonly IUICanvas _uiCanvas;
         private readonly ITimeService _timeService;
 
-        private readonly float[] _timeScales = { 1.0f, 1.5f, 2.0f };
+        private readonly float[] _timeScales = { 1.0f, 2.0f, 3.0f };
         private int _currentTimeScaleIndex = 0;
 
         // Part Selection Event for MainPresenter to listen to

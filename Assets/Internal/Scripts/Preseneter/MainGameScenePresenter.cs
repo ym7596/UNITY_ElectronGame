@@ -28,19 +28,27 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
         GridVisualizer gridVisualizer,
         GameUIPresenter uiPresenter)
     {
+        Debug.Log("MainPresenter Initialized");
         _inputService = inputService;
         _gridService = gridService;
         _timeService = timeService;
         _wirePlacer = wirePlacer;
         _uiPresenter = uiPresenter;
-
+        Debug.Log("MainPresenter Initialized2");
         _gridVisualizer = gridVisualizer;
+        Debug.Log($"input service : {_inputService} grid service : {_gridService} time service : {_timeService}" +
+                  $"wire placer : {_wirePlacer} ui presenter : {_uiPresenter} grid visualizer : {_gridVisualizer}");
         _cam = Camera.main;
     }
 
     public void Initialize()
     {
+        Debug.Log($"GridService Initialized : {_gridService}");
         _gridService.Initialize();
+        Debug.Log($"GridService Initialized : {_gridService}");
+        _gridVisualizer.InitializeMap(_gridService);
+        _wirePlacer.InitializeMap(_gridService);
+
         _inputService.OnLeftClickStarted += OnHandleLeftClickStarted;
         _inputService.OnLeftClickCanceled += OnHandleLeftClickCanceled;
         
@@ -48,8 +56,6 @@ public class MainGameScenePresenter : IInitializable, IDisposable, ITickable
 
         _uiPresenter.OnPartChanged += OnPartChanged;
         
-        _gridVisualizer.InitializeMap(_gridService);
-        _wirePlacer.InitializeMap(_gridService);
 
         // 시간 이벤트 연결
         _timeService.OnDayPassed += OnDayPassed;
